@@ -10,7 +10,7 @@ SAMPLE=${RESULTS_DIR}/${SAMPLE_NAME}
 
 
 # get RLCR reference file
-RLCR_BED=${CURR_SCRIPT_DIR}/RLCRs.${REF_BUILD}.noRepeatMasker.centromeres.bed
+RLCR_BED=${SCRIPT_DIR}/RLCRs.${REF_BUILD}.noRepeatMasker.centromeres.bed
 
 
 rm -f ${LOG_DIR}/${1}.log

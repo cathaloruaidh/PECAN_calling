@@ -21,6 +21,105 @@ FAIL_TEST="[\e[41mFAILED\e[0m]"
 
 
 
+# Create a logger for messages. 
+DEBUG="\e[94mDEBUG\e[0m"
+INFO="INFO \e[0m"
+NOTE="\e[92mNOTE \e[0m"
+WARN="\e[93mWARN \e[0m"
+ERROR="\e[91mERROR\e[0m"
+
+log() {
+	DATE=`date +"%H:%M:%S %Y/%m/%d"`
+
+	case $2 in
+		4)
+			MSG=${DEBUG}
+			;;
+
+		3)
+			MSG=${INFO}
+			;;
+
+		2)
+			MSG=${WARN}
+			;;
+
+		1)
+			MSG=${ERROR}
+			;;
+
+		0)
+			MSG=${NOTE}
+			;;
+
+		*)
+			MSG=${INFO}
+			;;
+	esac
+
+	if [[ $2 -le ${VERBOSE} ]]
+	then
+		MESSAGE="${MSG}\t${DATE}\t$1"
+		echo -e "${MESSAGE}" >> ${MAIN_LOG_FILE}
+		echo -e "${MESSAGE}"
+	fi
+}
+
+
+
+# Create a function to return pass or fail
+testResult(){
+	if [ $1 != "0" ]
+	then
+		log "${FAIL_TEST} - $(awk -v var=$1 -F '\t' '{if($1==var) print $2": "$3}' ${SCRIPT_DIR}/return_errors)" 1
+	else
+		log "${PASS_TEST}" 3
+	fi
+
+	if [ $# -gt 1 ]
+	then
+		cat ${ERRORS_DIR}/$2.*.err 2> /dev/null | grep -E '^Error|^Warning' 2> /dev/null | while read -r line
+		do
+			log "$line" 1
+		done
+	fi
+
+	log " " 3
+}
+
+
+
+# Error logger for script
+err() {
+	printf "%s\n" "$*" 1>&2 ;
+}
+
+
+# Print horizontal line for spacing, determined by terminal size
+printLine(){
+	width=$COLUMNS
+
+	if [[ $width -eq 0 ]]
+	then 
+		width=$(tput cols)
+
+		if [[ width -eq 0 ]]
+		then
+			width=80
+		fi
+	fi
+
+	num=${width-35}
+
+	return $(printf '#%.0s' $(seq 1 ${num}))
+}
+
+
+
+
+
+
+
 
 ### Find source data
 if [[ ! -f ${BAM} ]]
@@ -132,15 +231,6 @@ log " " 3
 
 
 ### Set the program paths, and load them
-
-#module load cports
-module load htslib-1.9-gcc-8.2.0-7jwlitg
-module load samtools-1.9-gcc-8.2.0-fzunfav
-module load manta-1.5.0-gcc-9.3.0-olw255f
-
-
-
-
 # if the variables are empty, throw an error
 if [[ -z "$( command -v samtools )" ]]
 then
@@ -163,59 +253,37 @@ log "bcftools was successfully found." 4
 
 
 
-### Find the Resource Files, depending on the reference build.
-if [[ $( echo ${REF_BUILD} | grep -E "19|37" ) ]]
-then
-	REFERENCE=hg19
-	REF_FILE=${REF_DIR}/${REFERENCE}/ucsc.hg19.fasta
-
-	
-	if [[ -z "${INCLUDE_FILE}" ]]
-	then
-		INCLUDE_FILE=${REF_DIR}/${REFERENCE}/ucsc.hg19.region.Standard.sort.bed.gz
-	fi
-
-
-	if [[ -z "${EXCLUDE_FILE}" ]]
-	then
-		EXCLUDE_FILE=${REF_DIR}/${REFERENCE}/ucsc.hg19.region.NonStandard.sort.bed.gz
-	fi
-
-
-else
-	REFERENCE=GRCh38
-	REF_FILE=${REF_DIR}/${REFERENCE}/GRCh38_full_analysis_set_plus_decoy_hla.fa
-
-
-	if [[ -z "${INCLUDE_FILE}" ]]
-	then
-		INCLUDE_FILE=${REF_DIR}/${REFERENCE}/GRCh38_full_analysis_set_plus_decoy_hla.regions.Standard.bed.gz
-	fi
-
-
-	if [[ -z "${EXCLUDE_FILE}" ]]
-	then
-		EXCLUDE_FILE=${REF_DIR}/${REFERENCE}/GRCh38_full_analysis_set_plus_decoy_hla.regions.NonStandard.bed.gz
-	fi
-
-fi
-
-CHR_DIR="${REF_DIR}/${REFERENCE}/chr/"
-
-
-
+### Find/create the Resource Files, depending on the reference build.
 if [[ ! -f ${REF_FASTA} ]]
 then
-	if [[ -z "${REF_FASTA}" ]]
-	then
-		log "No referece file specified, using ${REF_FILE##*/}" 4
-	else
-		log "Specified reference file (${REF_FASTA}) does not exist, using ${REF_FILE##*/}" 2
-	fi
-
-	REF_FASTA=${REF_FILE}
+	log "No FASTA file found" 1
 else
 	log "Reference file: $(basename ${REF_FASTA})" 4
+	
+	if [[ ! -f ${REF_FASTA}.fai ]]
+	then
+		log "Indexing FASTA file" 3
+		samtools faidx ${REF_FASTA}
+	fi
+
+
+	if [[ -z ${INCLUDE_FILE} ]]
+	then
+		log "Generating include file" 3
+		INCLUDE_FILE=$( echo ${REF_FASTA} | sed -e  's/\.gz$//g ; s/\.fasta$//g ; s/\.fa$//g' ).include.bed
+		grep -E "^chr[0-9XY]{1,2}\s" ${REF_FASTA}.fai | awk -v FS="\t" '{ print $1, $2-1, $2}' |  bedtools sort -i - > ${INCLUDE_FILE}
+	fi
+
+
+	if [[ -z ${EXCLUDE_FILE} ]]
+	then
+		log "Generating exclude file" 3
+		EXCLUDE_FILE=$( echo ${REF_FASTA} | sed -e  's/\.gz$//g ; s/\.fasta$//g ; s/\.fa$//g' ).exclude.bed
+		grep -Ev "^chr[0-9XY]{1,2}\s" ${REF_FASTA}.fai | awk -v FS="\t" '{ print $1, $2-1, $2}' |  bedtools sort -i - > ${EXCLUDE_FILE}
+	fi
+
+
+
 fi
 
 

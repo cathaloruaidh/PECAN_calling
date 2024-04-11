@@ -27,11 +27,8 @@ MAIN_LOG_FILE=${LOG_DIR}/main.log
 
 
 ### Edit these variables: 
-# where all scripts live
-SCRIPTS_DIR=/home/shared/cathal/scripts
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# where CNV calling scripts live
-CURR_SCRIPT_DIR=${SCRIPTS_DIR}/ngs-cnv-calling-fast
 
 # where softare lives
 TOOL_DIR=/home/shared/cathal/tools
@@ -45,7 +42,6 @@ REFERENCE=GRCh38
 
 # Get general functions defined elsewhere
 mkdir ${LOG_DIR}
-. ${SCRIPTS_DIR}/func.sh
 
 if [ $? -ne 0 ]
 then
@@ -75,6 +71,8 @@ RLCR_FRAC=0.75
 REF_BUILD="GRCh38"
 UPPER=30000000
 SEX="U"
+INCLUDE_FILE=""
+EXCLUDE_FILE=""
 
 cmd(){
 	echo `basename $0`
@@ -103,6 +101,8 @@ echo -e "\
 --readLength ; <INT> ; read length ; [estimate]
 --include ; <FILE> ; positions to include ; [standard contigs]
 --exclude ; <FILE> ; positions to exclude ; [non-standard contigs]
+--refDir ; <STRING> ; directory containing reference data ; []
+--fasta ; <FILE> ; reference FASTA file ; []
   ;
 -f, --faster; ; focus on DEL and DUP only ; [${FAST}]
 -g, --genotype ;  ; call genotypes with SV2 ; [${GENO}]
@@ -115,7 +115,7 @@ echo -e "\
 
 
 OPTS=`getopt -o b:e:fghl:n:r:s:t:v:u:x: \
-	--long bam:,end:,faster,geno,help,log:,name:,reference:,start:,threads:,vcf:,binSize:,readLength:,include:,exclude:,gq:,fracOverlap:,fracCollapse:,fracRLCR:,sex:,upper: \
+	--long bam:,end:,faster,geno,help,log:,name:,reference:,start:,threads:,vcf:,binSize:,readLength:,include:,exclude:,gq:,fracOverlap:,fracCollapse:,fracRLCR:,sex:,upper:,fasta: \
 	-n '$(cmd)' -- "$@"`
 
 if [ $? != 0 ]
@@ -216,6 +216,11 @@ while true; do
 			shift 2
 			;;
 
+		--fasta)
+			REF_FASTA="$2"
+			shift 2
+			;;
+
 		--gq)
 			GQ="$2"
 			shift 2
@@ -265,7 +270,7 @@ done
 
 ### Script directory
 # Test if the scripts directory exists
-if [ -z "${CURR_SCRIPT_DIR}" ]
+if [ -z "${SCRIPT_DIR}" ]
 then
 	log "Problem with script directory. Exiting ... " 1
 	exit 3
@@ -292,7 +297,7 @@ fi
 
 log "Calling initialisation script" 3 
 log " " 3
-. ${CURR_SCRIPT_DIR}/initialise.sh 
+. ${SCRIPT_DIR}/PECAN_00_Initialise.sh 
 
 if [ $? -ne 0 ]
 then
@@ -318,9 +323,9 @@ CURR=0
 CURR=$(( CURR + 1 ))
 if [[ ${S} -le ${CURR} && ${E} -ge ${CURR} ]]
 then
-	SCRIPT_NAME="CNV_01_RunCallers"
+	SCRIPT_NAME="PECAN_01_RunCallers"
 	log $SCRIPT_NAME 3
-	(. ${CURR_SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
+	(. ${SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
 	testResult $? $SCRIPT_NAME
 fi
 
@@ -331,9 +336,9 @@ fi
 CURR=$(( CURR + 1 ))
 if [[ ${S} -le ${CURR} && ${E} -ge ${CURR} ]]
 then
-	SCRIPT_NAME="CNV_02_Genotype"
+	SCRIPT_NAME="PECAN_02_Genotype"
 	log $SCRIPT_NAME 3
-	(. ${CURR_SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
+	(. ${SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
 	testResult $? $SCRIPT_NAME
 fi
 
@@ -343,9 +348,9 @@ fi
 CURR=$(( CURR + 1 ))
 if [[ ${S} -le ${CURR} && ${E} -ge ${CURR} ]]
 then
-	SCRIPT_NAME="CNV_03_CollapseWithin"
+	SCRIPT_NAME="PECAN_03_CollapseWithin"
 	log $SCRIPT_NAME 3
-	(. ${CURR_SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
+	(. ${SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
 	testResult $? $SCRIPT_NAME
 fi
 
@@ -355,9 +360,9 @@ fi
 CURR=$(( CURR + 1 ))
 if [[ ${S} -le ${CURR} && ${E} -ge ${CURR} ]]
 then
-	SCRIPT_NAME="CNV_04_WithinCaller_Merge"
+	SCRIPT_NAME="PECAN_04_WithinCaller_Merge"
 	log $SCRIPT_NAME 3
-	(. ${CURR_SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
+	(. ${SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
 	testResult $? $SCRIPT_NAME
 fi
 
@@ -367,9 +372,9 @@ fi
 CURR=$(( CURR + 1 ))
 if [[ ${S} -le ${CURR} && ${E} -ge ${CURR} ]]
 then
-	SCRIPT_NAME="CNV_05_BetweenCaller_Merge"
+	SCRIPT_NAME="PECAN_05_BetweenCaller_Merge"
 	log $SCRIPT_NAME 3
-	(. ${CURR_SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
+	(. ${SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
 	testResult $? $SCRIPT_NAME
 fi
 
@@ -379,9 +384,9 @@ fi
 CURR=$(( CURR + 1 ))
 if [[ ${S} -le ${CURR} && ${E} -ge ${CURR} ]]
 then
-	SCRIPT_NAME="CNV_06_RLCR_Overlap"
+	SCRIPT_NAME="PECAN_06_RLCR_Overlap"
 	log $SCRIPT_NAME 3
-	(. ${CURR_SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
+	(. ${SCRIPT_DIR}/$SCRIPT_NAME.sh $SCRIPT_NAME) 
 	testResult $? $SCRIPT_NAME
 fi
 

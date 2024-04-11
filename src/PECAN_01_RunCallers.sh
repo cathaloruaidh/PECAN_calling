@@ -33,7 +33,7 @@ then
 
 
 	log "Convert output to VCF, compress and index" 4
-	perl ${CURR_SCRIPT_DIR}/cnvnator2VCF.pl -prefix ${SAMPLE_NAME} -reference ${REF_BUILD} ${CNVPYTOR_OUTPUT} > ${CNVPYTOR_VCF}
+	perl ${SCRIPT_DIR}/cnvnator2VCF.pl -prefix ${SAMPLE_NAME} -reference ${REF_BUILD} ${CNVPYTOR_OUTPUT} > ${CNVPYTOR_VCF}
 	bgzip ${CNVPYTOR_VCF}
 	tabix ${CNVPYTOR_VCF}.gz
 
@@ -74,23 +74,6 @@ fi
 
 if [[ ! -f ${RESULTS_DIR}/LUMPY/${SAMPLE_NAME}.lumpy.vcf.gz ]]
 then 
-	#if [[ ! -f ${LUMPY_DISCORDANT} ]]
-	#then
-	#	log "Extracting Discordant reads, and sorting. " 4
-	#	samtools view -h -F 1294 ${BAM} | samtools sort > ${LUMPY_DISCORDANT}
-	#fi
-
-
-	#if [[ ! -f ${LUMPY_SPLITTERS}  ]]
-	#then
-	#	log "Extracting split reads, and sorting. " 4
-	#	samtools view -h ${BAM} | ${TOOL_DIR}/lumpy-sv-0.2.13/scripts/extractSplitReads_BwaMem -i stdin | samtools sort > ${LUMPY_SPLITTERS}
-	#fi
-
-
-	#log "Determining histogram for insert size. " 4
-
-
 	log "Running lumpy via smoove (and sorting output). " 4
 	${TOOL_DIR}/smoove_0.2.8/smoove call --name ${SAMPLE_NAME} \
 		--fasta ${REF_FASTA} \

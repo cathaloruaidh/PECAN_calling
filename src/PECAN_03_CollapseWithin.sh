@@ -44,7 +44,7 @@ do
 		# (could parallelise this to speed up)
 		for CHROM in $(cut -f1 ${PREFIX}.bed | sort | uniq)
 		do
-			${CURR_SCRIPT_DIR}/CNV_MakeSets.sh ${PREFIX}.${CHROM} ${CALLER}_${TYPE} ${COLLAPSE_FRAC} 
+			${SCRIPT_DIR}/PECAN_MakeSets.sh ${PREFIX}.${CHROM} ${CALLER}_${TYPE} ${COLLAPSE_FRAC} 
 		done
 
 
