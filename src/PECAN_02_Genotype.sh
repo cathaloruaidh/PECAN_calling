@@ -11,7 +11,7 @@ mkdir ${GT_TEMP_DIR}
 
 
 # extract calls from VCF, >1kbp for RD callers only
-bcftools query -f '%CHROM\t%POS\t%END\t%SVTYPE\n' ${RESULTS_DIR}/CNVPYTOR/${SAMPLE_NAME}.cnvpytor.vcf.gz 3> /dev/null | awk '$3-$2 > 1000' > ${RESULTS_DIR}/${SAMPLE_NAME}.cnvpytor.txt
+bcftools query -f '%CHROM\t%POS\t%END\t%SVTYPE\n' ${RESULTS_DIR}/CNVPYTOR/${SAMPLE_NAME}.cnvpytor.vcf.gz 2> /dev/null | awk '$3-$2 > 1000' > ${RESULTS_DIR}/${SAMPLE_NAME}.cnvpytor.txt
 bcftools query -f '%CHROM\t%POS\t%END\t%SVTYPE\n' ${RESULTS_DIR}/ERDS/${SAMPLE_NAME}.erds.vcf 2> /dev/null | awk '$3-$2 > 1000' > ${RESULTS_DIR}/${SAMPLE_NAME}.erds.txt
 bcftools query -f '%CHROM\t%POS\t%END\t%SVTYPE\n' ${RESULTS_DIR}/LUMPY/${SAMPLE_NAME}.lumpy.vcf.gz 2> /dev/null > ${RESULTS_DIR}/${SAMPLE_NAME}.lumpy.txt
 bcftools query -f '%CHROM\t%POS\t%END\t%SVTYPE\n' ${RESULTS_DIR}/MANTA/results/variants/diploidSV.vcf.gz 2> /dev/null > ${RESULTS_DIR}/${SAMPLE_NAME}.manta.txt
