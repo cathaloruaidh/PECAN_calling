@@ -110,7 +110,7 @@ then
 
 
 	log "Running workflow file" 4
-	${MANTA_RUN_DIR}/runWorkflow.py -m local -j 4 2> ${MANTA_LOG}
+	${MANTA_RUN_DIR}/runWorkflow.py -m local -j ${NPROCS} 2> ${MANTA_LOG}
 
 
 	log "Completed calling with Manta" 3
