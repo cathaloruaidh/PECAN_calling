@@ -25,7 +25,7 @@ if (! defined $file || ! -f $file ) {
 
 open(FILE,$file) or die "Can't open file ",$file,".\n";
 print STDERR "Reading calls ...\n";
-my ($pop_id) = split(/\./,$file);
+my ($pop_id) = ($prefix);
 print '##fileformat=VCFv4.1',"\n";
 print '##fileDate='.`date '+%Y%m%d'`;
 print "##reference=$reference","\n";
